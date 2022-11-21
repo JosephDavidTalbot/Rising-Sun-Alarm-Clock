@@ -1,0 +1,54 @@
+# The Rising Sun Alarm Clock
+
+The **Rising Sun Alarm Clock** is a simple and straightforward device: it uses a microcontroller to drive a string of dimmable LEDs to gradually brighten your room when you wake up, so that you can acclimate to the light gradually, without hurting your eyes. The particular implementation I've settled on adds in a few quality-of-life features that make the whole thing far more convenient.
+
+## What It Actually Does
+
+The Rising Sun Alarm Clock, as programmed by myself, does a few simple things in sequence. Upon powering up, it blinks the lights connected to GPIO28/Pin 34 as well as its own little onboard LED, for a period of five seconds. Then, for another five seconds, it engages in a more sizzle-reel type behavior, sending a multicolored waveform of light along the length of the light array. Then, it connects to your network, sets its internal clock, and then goes to sleep until five minutes before your wakeup time- set by default to 6AM CST.
+
+Once it reaches five minutes before your wakeup time- or *any* arbitrary number of minutes, it's just set to five by default- it begins to gradually brighten the red channel of the LEDs, dynamically timed such that it achieves full (red channel) brightness *right* at your actual wakeup time. From there, it spends another five minutes gradually brightening the blue and green channels, letting your eyes acclimate to light without flashing a sudden bright light in your eyes, and generally avoiding causing any pain.
+
+Of course, once it *has* reached full brightness, it begins to blink the lights on and off in an effort to annoy you into getting out of bed. It's been five minutes since your alarm, after all. It will continue to blink the lights on and off until you hit the reset button... which will, of course, subject you to five more seconds of blinking lights and sizzle reel animation before blissfully going dark for another twenty three hours and fifty minutes.
+
+## Dependencies
+
+This uses MicroPython, as well as the `neopixel` and `mpython` libraries. I haven't figured out how to bake my Pico's contents into a `.uf2` file yet, so you're just gonna have to... install all that yourself.
+
+Sorry.
+
+## Bill Of Materials
+
+For the Rising Sun Alarm Clock, I used the following core components:
+
+- One Raspberry Pi Pico W microcontroller development board. Can be substituted for any Arduino or Teensy or other microcontroller you have on-hand, so long as it does not draw more than 500 milliamps of current, and will not be damaged by 5 volts. It is preferable to use a microcontroller with integrated wifi so that it can automatically set itself to network time, but not strictly necessary; if you are willing to manually set the time every time you turn on or reset the alarm clock, then a microcontroller without wifi will be perfectly serviceable. I was not so willing, and so I spent an extra two dollars to get the Pico W instead of the Pico. There are non-Pico microcontrollers with wifi, though. You can also use a Raspberry Pi Zero W, or just a regular-ass Raspberry Pi if you happen to have either of those on-hand. All of these can be acquired, if you don't have one on hand already, from [Adafruit](https://www.adafruit.com/product/5526). Do be aware, however, that the Pico W is something of a hot commodity; a $6 wifi-enabled microcontroller is very desirable, after all, and they tend to sell out pretty frequently.
+- One set of dimmable LEDs connected in series such that all of them can be brightness-adjusted by a single I/O pin of the microcontroller, which can accept 5 volts of power, and which do not draw more than 3.5 amps at full brightness. I used a strand of fifty Neopixels at one LED per 10cm, giving me a little more than 5m of strand to play with. [You can find the specific strand I used here.](https://www.adafruit.com/product/4560) Be aware that, when I purchased it, this came with a separate female 3-pin JST connector with wires already affixed, rendering the 3-pin JST set I purchased redundant. Other models may not come with such conveniences, though. Don't take that gamble. Always buy an extra connector for connecting whatever lights you buy to whatever microcontroller you use.
+- One 5V 4A DC power supply, and a way to connect things to it. Mine had a barrel plug with the semi-standardized 5.5mm OD/2.1mm ID tip, and the same company also sold a female terminal block for that very same size. These power supplies are very commonly available, and you may even have a suitable one on-hand already. If you don't, and want to continue buying everything from Adafruit so it'll all come in the same box, then get [this brick here](https://www.adafruit.com/product/1466) and [this block here.](https://www.adafruit.com/product/368)
+- One 5V/3V Level Shifter. Potentially extraneous, but why take the risk? The Neopixels want a control signal that's somewhat close in voltage to their power voltage. If they're running off 4.5V, then the 3.3V that most microcontrollers can output on their I/O pins works just fine. If you're running a microcontroller that outputs 5V on its I/O pins, that works just fine too. But, when you're trying to drive a long series of Neopixels with 3.3V when they're powered at 5V... well, that can *also* work well enough, provided you're only using fifty of them. However, the silicon lottery is real, your mileage may vary, and these chips are neither big nor expensive. I used the 74AHCT125, available along with pretty much all of the rest of these components from [Adafruit](https://www.adafruit.com/product/1787), but also available from [Amazon](https://www.amazon.com/dp/B08GJF43N3).
+
+You're also probably going to want:
+
+- A project box capable of holding all of your components and shielding them from rubbing up against your blinds and shorting out. You will likely want its internal dimensions to be no smaller than 3x3x7cm
+- A set of male and female headers so that you can easily separate your microcontroller from the rest of your components for reprogramming.
+- At least one momentary button for resetting or snoozing the alarm clock, and probably a few more if you're going to include time-setting functionality.
+- A dinky little OLED display for the current time, again probably only if you're including the time-setting functionality.
+- A piezo buzzer if you want it to make noise to wake you up.
+- Some adhesive plastic hooks for holding up the string of lights.
+- All the usual consumables in electronics projects- perfboard, 22 gauge copper wire, solder, electrical tape, and N95 masks. Flux fumes aren't strictly *super dangerous,* but you probably don't want to be breathing that shit anyways. If you have a fume extractor, use it.
+- A multimeter for safe testing.
+
+## Build Guide
+
+Once you've ordered everything and it's showed up at your door, you can begin the assembly process, which should, hopefully, prove to be straightforward.
+
+1. Cut and strip both ends of six or eight lengths of wire, half red and half black. Gather all three or four of your black wires, and connect them with solder or a wire nut such that all of them are connected at one end, leaving three or four ends free to connect to other components. This is your common ground. Repeat this process with your red wires, which will become your common power. Secure both joints in such a way that they are insulated and unlikely to short out if they bump into each other, using electrical tape, heat shrink tubing, or even hot glue if that's all you have. If you're using a multimeter, take a moment to test each lead on your wire groups, to ensure that all of them are properly connected. From here on out, I am going to assume that you are testing *every* electrical connection you make.
+2. Connect one of your common ground leads to the negative terminal of your power supply terminal. Connect one of your common power leads to the positive terminal of your power supply terminal. Temporarily tape one end of common ground to the black probe of your multimeter, and one end of common power to the red probe, and set it to measure voltage. Connect your terminal to your actual power supply, and your power supply to the wall. Ensure that your multimeter reads 5V.
+3. Identify the 5V, GND, and DATA/DIN wires for your LEDs. Using your detachable connector, carefully connect 5V to common power and GND to common ground.
+4. If you're using perfboard and headers, which I highly recommend, go ahead and attach your headers to your microcontroller. Be sure to connect the male headers to the microcontroller, and the female headers to the perfboard. Be very careful and meticulous about the angles here. Don't be afraid to stick the headers into some modeling clay if that's what it takes to hold them in the right orientation while you solder them in place. And *definitely* solder the male headers to the microcontroller *before* you solder the female headers to the perfboard, so that you can hold *those* in position with the male headers. Note: If you're using a level shifter chip, solder down female headers or an IC socket for that as well.
+5. Connect your microcontroller to common power and ground as well. If you're not using a Pi Pico, go look up how to power your particular board through its pinout. If you *are* using a Pi Pico, just connect common power to Pin 39, labeled VSYS, and common ground to one of Pins 3, 8, 13, 18, 23, 33, or 38- which happens to be right next to VSYS! How convenient! Don't use that pin, though, you might get a solder bridge if you're not very careful, and that'll be a huge pain to fix. Do not connect anything at all to Pin 40, labeled VBUS.
+6. Connect your level shifter chip to common power and ground. If you're using the 74AHCT125, then you'll want to solder common power to Pin 14 and common ground to Pin 7. Pin 1 is marked with a little indented dot, and the pin numbers increment as you go counterclockwise from there.
+7. Connect your level shifter chip to your microcontroller and your LED connector. First begin by tying Pin 1 of your level shifter to ground. Next, connect Pin 2 of your level shifter to a GPIO pin. I used GP28, located on Pin 34 of the Pico. Finally, connect Pin 3 of your level shifter to the DIN wire of your LED connector.
+8. Install and boot up Thonny on your real computer. Using that, flash MicroPython onto your Pico and then load up the code in this repo. If you're rolling your own, name your script `main.py` so that the Pico will run it automatically upon powering on. Also, install the `mpython` library while you're at it. That's necessary for getting network time.
+9. Modify your project box so that it will permit the egress of your power port and LED connector, then put the rest of your components inside it.
+10. Hang up your lights in such a way that you can connect one end to your project box where it, in turn, will sit securely.
+
+And that's about it.
